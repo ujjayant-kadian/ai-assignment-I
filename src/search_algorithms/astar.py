@@ -11,7 +11,8 @@ def heuristic(a, b):
 def solve_astar(maze, win):
     """
     Solve the maze using the A* search algorithm and animate the process.
-    The algorithm uses the Manhattan distance as the heuristic.
+    Uses the Manhattan distance as the heuristic.
+    Returns a tuple: (steps_taken, nodes_expanded, max_frontier_size).
     """
     start = (0, 0)
     end = (maze.rows - 1, maze.cols - 1)
@@ -28,9 +29,14 @@ def solve_astar(maze, win):
     open_set_hash = {start}
     visited = set()
 
+    nodes_expanded = 0
+    max_frontier_size = len(open_set_hash)
+
     while not open_set.empty():
         current = open_set.get()[1]
         open_set_hash.remove(current)
+        nodes_expanded += 1
+        max_frontier_size = max(max_frontier_size, len(open_set_hash))
         visited.add(current)
 
         # Visualize the A* search state
@@ -47,7 +53,7 @@ def solve_astar(maze, win):
             break
 
         for neighbor in get_neighbors_coord(current, maze):
-            tentative_g = g_score[current] + 1  # Assume cost of 1 for each move
+            tentative_g = g_score[current] + 1  # Cost of 1 for each move
             if tentative_g < g_score[neighbor]:
                 came_from[neighbor] = current
                 g_score[neighbor] = tentative_g
@@ -55,6 +61,7 @@ def solve_astar(maze, win):
                 if neighbor not in open_set_hash:
                     open_set.put((f_score[neighbor], neighbor))
                     open_set_hash.add(neighbor)
+                    max_frontier_size = max(max_frontier_size, len(open_set_hash))
 
     # Reconstruct and animate the final solution path
     path = reconstruct_path(came_from, start, end)
@@ -64,3 +71,5 @@ def solve_astar(maze, win):
             highlight_cell(win, path_cell, GREEN, maze.cell_size)
         pygame.display.update()
         pygame.time.delay(DELAY)
+    
+    return (len(path), nodes_expanded, max_frontier_size)
