@@ -17,10 +17,10 @@ def get_maze_dimensions():
     Defaults to 20x20 if no valid input is provided.
     """
     try:
-        rows_input = input("Enter number of rows (default 20): ").strip()
-        cols_input = input("Enter number of columns (default 20): ").strip()
-        rows = int(rows_input) if rows_input else 20
-        cols = int(cols_input) if cols_input else 20
+        rows_input = input("Enter number of rows (default 15): ").strip()
+        cols_input = input("Enter number of columns (default 15): ").strip()
+        rows = int(rows_input) if rows_input else 15
+        cols = int(cols_input) if cols_input else 15
     except ValueError:
         print("Invalid input detected. Using default maze dimensions (20x20).")
         rows, cols = 20, 20
@@ -29,12 +29,14 @@ def get_maze_dimensions():
 def choose_run_mode():
     """
     Allow the user to choose a run mode:
-      - Press 1 for DFS, 2 for BFS, 3 for A* Search,
-      - 4 to run ALL classical search algorithms,
-      - 5 for Policy Iteration (MDP),
-      - 6 for Value Iteration (MDP),
-      - 7 to run ALL MDP algorithms sequentially,
-      - 8 to run ALL algorithms (classical and MDP) sequentially.
+      - 1: DFS
+      - 2: BFS
+      - 3: A* Search
+      - 4: ALL classical search algorithms
+      - 5: Policy Iteration (MDP)
+      - 6: Value Iteration (MDP)
+      - 7: ALL MDP algorithms
+      - 8: ALL algorithms (classical + MDP)
     """
     choosing = True
     mode = None
@@ -50,33 +52,24 @@ def choose_run_mode():
     while choosing:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
-                pygame.quit()
-                sys.exit()
+                pygame.quit(); sys.exit()
             if event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_1:
-                    mode = "DFS"
-                    choosing = False
+                    mode = "DFS"; choosing = False
                 elif event.key == pygame.K_2:
-                    mode = "BFS"
-                    choosing = False
+                    mode = "BFS"; choosing = False
                 elif event.key == pygame.K_3:
-                    mode = "ASTAR"
-                    choosing = False
+                    mode = "ASTAR"; choosing = False
                 elif event.key == pygame.K_4:
-                    mode = "ALL_CLASSICAL"
-                    choosing = False
+                    mode = "ALL_CLASSICAL"; choosing = False
                 elif event.key == pygame.K_5:
-                    mode = "POLICY"
-                    choosing = False
+                    mode = "POLICY"; choosing = False
                 elif event.key == pygame.K_6:
-                    mode = "VALUE"
-                    choosing = False
+                    mode = "VALUE"; choosing = False
                 elif event.key == pygame.K_7:
-                    mode = "ALL_MDP"
-                    choosing = False
+                    mode = "ALL_MDP"; choosing = False
                 elif event.key == pygame.K_8:
-                    mode = "ALL_ALL"
-                    choosing = False
+                    mode = "ALL_ALL"; choosing = False
     return mode
 
 def wait_for_restart():
@@ -89,12 +82,10 @@ def wait_for_restart():
     while waiting:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
-                pygame.quit()
-                sys.exit()
+                pygame.quit(); sys.exit()
             if event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_ESCAPE:
-                    pygame.quit()
-                    sys.exit()
+                    pygame.quit(); sys.exit()
                 else:
                     waiting = False
                     break
@@ -121,11 +112,10 @@ def run_algorithm(algorithm, maze, win, rows, cols):
     execution_time = time.time() - start_time
     current, peak = tracemalloc.get_traced_memory()
     tracemalloc.stop()
-    memory_usage = peak / (1024 * 1024)  # Convert bytes to MB
+    memory_usage = peak / (1024 * 1024)  # in MB
 
     steps_taken, nodes_expanded, max_frontier_size = metrics
     log_result(algorithm, (rows, cols), execution_time, steps_taken, memory_usage, nodes_expanded, max_frontier_size)
-
     print(f"{algorithm}: Execution Time: {execution_time:.4f} s, Steps: {steps_taken}, Memory Usage: {memory_usage:.4f} MB, Nodes Expanded: {nodes_expanded}, Max Frontier Size: {max_frontier_size}")
     return metrics
 
@@ -133,32 +123,34 @@ def run_mdp_algorithm(algorithm, maze, win, rows, cols):
     """
     Run an MDP algorithm (Policy or Value Iteration) on a deep copy of the maze.
     Measures execution time, memory usage, and then extracts and animates the optimal path.
-    Returns a tuple: (steps_taken, 0, 0) where nodes expanded and frontier size are not measured.
+    Returns a tuple:
+      - For VALUE: (steps_taken, value_iter_count, 0)
+      - For POLICY: (steps_taken, policy_improvement_count, total_evaluation_iterations)
     """
     maze_copy = copy.deepcopy(maze)
     start_time = time.time()
     tracemalloc.start()
     
     if algorithm == "POLICY":
-        steps_taken = policy_iteration(maze_copy, win, gamma=0.9)
+        metrics = policy_iteration(maze_copy, win, gamma=0.9, theta=1e-4)
     elif algorithm == "VALUE":
-        steps_taken = value_iteration(maze_copy, win, gamma=0.9)
+        metrics = value_iteration(maze_copy, win, gamma=0.9, theta=1e-4)
     else:
-        policy = {}
+        metrics = (None, None, None)
     
     execution_time = time.time() - start_time
     current, peak = tracemalloc.get_traced_memory()
     tracemalloc.stop()
     memory_usage = peak / (1024 * 1024)
-
-    # For MDP algorithms, nodes expanded and max frontier size are set to 0.
-    log_result(algorithm, (rows, cols), execution_time, steps_taken, memory_usage, 0, 0)
-    print(f"{algorithm}: Execution Time: {execution_time:.4f} s, Steps: {steps_taken}, Memory Usage: {memory_usage:.4f} MB")
-    return (steps_taken, 0, 0)
+    
+    steps_taken, second_metric, third_metric = metrics
+    log_result(algorithm, (rows, cols), execution_time, steps_taken, memory_usage, second_metric, third_metric)
+    print(f"{algorithm}: Execution Time: {execution_time:.4f} s, Steps: {steps_taken}, Memory Usage: {memory_usage:.4f} MB, Iteration Count\Policy Improvement Count: {second_metric}, Total Evaluation Iteration: {third_metric}")
+    return metrics
 
 def main():
     rows, cols = get_maze_dimensions()
-    cell_size = 30  # Size of each cell in pixels
+    cell_size = 30  # cell size in pixels
     width = cols * cell_size
     height = rows * cell_size
 
@@ -173,7 +165,7 @@ def main():
 
         mode = choose_run_mode()
 
-        # Clear the window and redraw the maze.
+        # Clear window and redraw the maze.
         maze.draw(win)
         pygame.display.update()
 
@@ -198,7 +190,7 @@ def main():
         elif mode in ["POLICY", "VALUE"]:
             run_mdp_algorithm(mode, maze, win, rows, cols)
 
-        print("\nComparison results for maze size {}x{}:".format(rows, cols))
+        print(f"\nComparison results for maze size {rows}x{cols}:")
         results = compare_algorithms((rows, cols))
         for result in results:
             print(result)

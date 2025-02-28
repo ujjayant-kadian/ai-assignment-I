@@ -5,8 +5,14 @@ from maze_generator import highlight_cell, get_neighbors_coord, reconstruct_path
 def solve_bfs(maze, win):
     """
     Solve the maze using Breadth-First Search (BFS) and animate the search.
-    The search starts at (0,0) and continues until the bottom-right cell is reached.
-    Returns a tuple: (steps_taken, nodes_expanded, max_frontier_size).
+    Parameters:
+        maze : Maze object.
+        win  : Pygame window
+
+    Returns a tuple: (steps_taken, nodes_expanded, max_frontier_size), where:
+        - steps_taken: number of cells in the final optimal path.
+        - nodes_expanded: number of nodes expanded during the search.
+        - max_frontier_size: maximum number of nodes in the frontier at any point during the search.
     """
     start = (0, 0)
     end = (maze.rows - 1, maze.cols - 1)

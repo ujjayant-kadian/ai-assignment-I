@@ -12,7 +12,15 @@ def solve_astar(maze, win):
     """
     Solve the maze using the A* search algorithm and animate the process.
     Uses the Manhattan distance as the heuristic.
-    Returns a tuple: (steps_taken, nodes_expanded, max_frontier_size).
+    
+    Parameters:
+        maze : Maze object.
+        win  : Pygame window
+
+    Returns a tuple: (steps_taken, nodes_expanded, max_frontier_size), where:
+        - steps_taken: number of cells in the final optimal path.
+        - nodes_expanded: number of nodes expanded during the search.
+        - max_frontier_size: maximum number of nodes in the frontier at any point during the search.
     """
     start = (0, 0)
     end = (maze.rows - 1, maze.cols - 1)

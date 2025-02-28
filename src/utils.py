@@ -3,7 +3,66 @@ import csv
 
 # Define the CSV file location and header.
 RESULTS_FILE = os.path.join("data", "results.csv")
-HEADER = ["Algorithm", "Maze Size", "Execution Time", "Steps Taken", "Memory Usage", "Nodes Expanded", "Max Frontier Size"]
+HEADER = [
+    "Algorithm", 
+    "Maze Size", 
+    "Execution Time", 
+    "Steps Taken", 
+    "Memory Usage", 
+    "Nodes Expanded\\Iteration Count\\Policy Improvement Count", 
+    "Max Frontier Size\\Total Evaluation Iteration"
+]
+
+def get_possible_actions(maze, state):
+    """
+    Given a maze and a state (r, c), return a list of tuples (action, next_state)
+    for all available actions from that state (for mdp algorithms).
+    
+    The maze Cell's walls are assumed to be in order [top, right, bottom, left].
+    An action "U" is available if there is no top wall, "R" if no right wall, etc.
+    """
+    r, c = state
+    actions = []
+    cell = maze.grid[r][c]
+    # Up
+    if not cell.walls[0] and r > 0:
+        actions.append(("U", (r - 1, c)))
+    # Right
+    if not cell.walls[1] and c < maze.cols - 1:
+        actions.append(("R", (r, c + 1)))
+    # Down
+    if not cell.walls[2] and r < maze.rows - 1:
+        actions.append(("D", (r + 1, c)))
+    # Left
+    if not cell.walls[3] and c > 0:
+        actions.append(("L", (r, c - 1)))
+    return actions
+
+def extract_policy_path(policy, maze):
+    """
+    Function to extract the optimal path from (0,0) to terminal based on the given policy (for mdp_algorithms).
+    """
+    path = []
+    state = (0, 0)
+    terminal = (maze.rows - 1, maze.cols - 1)
+    while state != terminal:
+        path.append(state)
+        action = policy.get(state)
+        if action is None:
+            break
+        r, c = state
+        if action == "U":
+            state = (r - 1, c)
+        elif action == "R":
+            state = (r, c + 1)
+        elif action == "D":
+            state = (r + 1, c)
+        elif action == "L":
+            state = (r, c - 1)
+        else:
+            break
+    path.append(terminal)
+    return path
 
 def initialize_results_file(file_path=RESULTS_FILE):
     """
@@ -20,13 +79,15 @@ def log_result(algorithm, maze_size, execution_time, steps_taken, memory_usage, 
     Append a new result line to the CSV file.
 
     Parameters:
-      algorithm (str): e.g., "DFS", "BFS", "ASTAR"
+      algorithm (str): e.g., "DFS", "BFS", "ASTAR", "POLICY", "VALUE"
       maze_size (tuple or str): Maze dimensions; if tuple, converted to "rowsxcols".
       execution_time (float): Time taken in seconds.
       steps_taken (int): Number of steps in the solution path.
       memory_usage (float): Peak memory usage in MB.
-      nodes_expanded (int): Number of nodes expanded during the search.
-      max_frontier_size (int): Maximum size of the frontier during the search.
+      nodes_expanded (int): For classical search: number of nodes expanded;
+                              For MDP methods: iteration count or policy improvement count.
+      max_frontier_size (int): For classical search: maximum frontier size;
+                               For MDP methods: total evaluation iterations (or 0).
     """
     initialize_results_file(file_path)
     if isinstance(maze_size, tuple):
